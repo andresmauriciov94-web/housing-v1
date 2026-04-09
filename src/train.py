@@ -1,17 +1,7 @@
 """
 src/train.py — Entrenamiento con escalado selectivo y quality gate.
 
-CHAS es variable categórica (0 o 1) — no se escala.
-Todas las demás features numéricas sí se escalan con StandardScaler.
-
-Quality gate:
-  - Si existe un modelo en producción, solo lo reemplaza si el nuevo es mejor.
-  - Compara por RMSE sobre el test set.
-
-Para agregar un nuevo modelo:
-  1. Importarlo arriba
-  2. Agregarlo al diccionario 'candidatos'
-  3. Correr: python pipeline.py --version vX.X
+Recibe fig_medv desde pipeline.py y la loggea dentro del run padre.
 """
 
 import joblib
@@ -30,8 +20,7 @@ FEATURES_CATEGORICAS = ["CHAS"]
 MODEL_PATH           = "modelo_final.pkl"
 
 
-def _construir_preprocesador(X_train: pd.DataFrame) -> ColumnTransformer:
-    """Escala todas las columnas menos CHAS."""
+def _construir_preprocesador(X_train):
     features_numericas = [c for c in X_train.columns if c not in FEATURES_CATEGORICAS]
     return ColumnTransformer(transformers=[
         ("num", StandardScaler(), features_numericas),
@@ -40,13 +29,8 @@ def _construir_preprocesador(X_train: pd.DataFrame) -> ColumnTransformer:
 
 
 def _rmse_modelo_actual(X_test, y_test) -> float:
-    """
-    Calcula el RMSE del modelo actualmente en producción.
-    Retorna infinito si no hay modelo guardado.
-    """
     if not os.path.exists(MODEL_PATH):
         return float("inf")
-
     try:
         modelo_actual = joblib.load(MODEL_PATH)
         y_pred        = modelo_actual.predict(X_test)
@@ -56,7 +40,6 @@ def _rmse_modelo_actual(X_test, y_test) -> float:
 
 
 def _entrenar_candidato(nombre, estimador, X_train, X_test, y_train, y_test):
-    """Entrena un candidato como run hijo en MLflow."""
     with mlflow.start_run(run_name=nombre, nested=True):
         mlflow.set_tag("modelo", nombre)
 
@@ -64,7 +47,6 @@ def _entrenar_candidato(nombre, estimador, X_train, X_test, y_train, y_test):
             ("preprocesador", _construir_preprocesador(X_train)),
             ("regresion",     estimador),
         ])
-
         modelo.fit(X_train, y_train)
         y_pred = modelo.predict(X_test)
 
@@ -82,18 +64,15 @@ def _entrenar_candidato(nombre, estimador, X_train, X_test, y_train, y_test):
     return modelo, rmse, r2, mae
 
 
-def entrenar(X_train, X_test, y_train, y_test, version, responsable):
+def entrenar(X_train, X_test, y_train, y_test, version, responsable, fig_medv=None):
     """
-    Entrena todos los candidatos, aplica quality gate y
-    solo reemplaza el modelo en producción si el nuevo es mejor.
+    Entrena candidatos, aplica quality gate y loggea la figura MEDV
+    dentro del run padre.
     """
-
-    # ── Candidatos ────────────────────────────────────────────────────────────
     candidatos = {
         "LinearRegression": LinearRegression(),
         "Ridge_alpha1":     Ridge(alpha=1.0),
     }
-    # ─────────────────────────────────────────────────────────────────────────
 
     mejor_modelo = None
     mejor_rmse   = float("inf")
@@ -102,10 +81,8 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable):
     mejor_mae    = 0.0
 
     features_numericas = [c for c in X_train.columns if c not in FEATURES_CATEGORICAS]
-
-    # RMSE del modelo actual en producción (para el quality gate)
-    rmse_produccion = _rmse_modelo_actual(X_test, y_test)
-    hay_modelo      = rmse_produccion != float("inf")
+    rmse_produccion    = _rmse_modelo_actual(X_test, y_test)
+    hay_modelo         = rmse_produccion != float("inf")
 
     if hay_modelo:
         print(f"\n  Modelo actual en producción — RMSE: {rmse_produccion:.4f}")
@@ -125,6 +102,13 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable):
         if hay_modelo:
             mlflow.log_metric("rmse_modelo_produccion", rmse_produccion)
 
+        # ── Loggear gráfica MEDV dentro del run padre ─────────────────────────
+        if fig_medv is not None:
+            mlflow.log_figure(fig_medv, "data_cleaning/distribucion_medv.png")
+            import matplotlib.pyplot as plt
+            plt.close(fig_medv)
+            print("  Gráfica MEDV guardada en MLflow → data_cleaning/distribucion_medv.png")
+
         run_id = run.info.run_id
 
         print(f"\n  Evaluando {len(candidatos)} modelos...")
@@ -133,8 +117,7 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable):
 
         for nombre, estimador in candidatos.items():
             modelo, rmse, r2, mae = _entrenar_candidato(
-                nombre, estimador,
-                X_train, X_test, y_train, y_test,
+                nombre, estimador, X_train, X_test, y_train, y_test,
             )
             if rmse < mejor_rmse:
                 mejor_rmse   = rmse
@@ -149,25 +132,20 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable):
 
         # ── Quality gate ──────────────────────────────────────────────────────
         if mejor_rmse < rmse_produccion:
-            # El nuevo modelo es mejor — reemplazar
             joblib.dump(mejor_modelo, MODEL_PATH)
             mlflow.set_tag("resultado_quality_gate", "APROBADO — modelo reemplazado")
             mlflow.log_metric("mejora_rmse", rmse_produccion - mejor_rmse)
-
             print(f"\n  Quality gate: APROBADO")
             print(f"  RMSE anterior : {rmse_produccion:.4f}")
             print(f"  RMSE nuevo    : {mejor_rmse:.4f}")
             print(f"  Mejora        : {rmse_produccion - mejor_rmse:.4f}")
-            print(f"  Modelo guardado: {MODEL_PATH}")
             modelo_guardado = True
         else:
-            # El modelo actual es mejor — no reemplazar
             mlflow.set_tag("resultado_quality_gate", "RECHAZADO — modelo actual es mejor")
-
             print(f"\n  Quality gate: RECHAZADO")
             print(f"  RMSE actual  : {rmse_produccion:.4f}")
             print(f"  RMSE nuevo   : {mejor_rmse:.4f}")
-            print(f"  El modelo en produccion sigue siendo el mejor.")
+            print(f"  El modelo en producción sigue siendo el mejor.")
             modelo_guardado = False
 
     return mejor_modelo, run_id, mejor_rmse, mejor_r2, mejor_mae, modelo_guardado

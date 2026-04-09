@@ -38,7 +38,9 @@ def main():
     # ── 1. Datos ──────────────────────────────────────────────────────────────
     print("\n[1/2] Obteniendo y limpiando datos...")
     df_raw = get_raw_data()
-    X_train, X_test, y_train, y_test = clean_data(
+
+    # clean_data retorna también la figura de distribución MEDV
+    X_train, X_test, y_train, y_test, fig_medv = clean_data(
         df_raw,
         precio_limite = cfg["data"]["precio_limite"],
         test_size     = cfg["data"]["test_size"],
@@ -47,10 +49,14 @@ def main():
 
     # ── 2. Entrenamiento + quality gate ───────────────────────────────────────
     print("\n[2/2] Entrenando modelos...")
+    mlflow.end_run()  # Cerrar cualquier run activo antes de iniciar
+
+    # fig_medv se loggea DENTRO del run padre en train.py
     modelo, run_id, rmse, r2, mae, modelo_guardado = entrenar(
         X_train, X_test, y_train, y_test,
         version     = args.version,
         responsable = args.responsable,
+        fig_medv    = fig_medv,
     )
 
     # ── Resumen ───────────────────────────────────────────────────────────────
