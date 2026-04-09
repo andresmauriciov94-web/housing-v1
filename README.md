@@ -99,74 +99,18 @@ Abre: http://127.0.0.1:8000/docs
 
 ---
 
-## Opción B — Ejecución con Docker Compose (recomendada)
 
-Levanta la API y MLflow juntos con un solo comando.
-Los datos persisten entre reinicios gracias a los volúmenes Docker.
+## Opción B — Solo la API con Docker
 
-### 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/andresmauriciov94-web/housing-v1.git
-cd housing-v1
-```
-
-### 2. Levantar todos los servicios
-
-```bash
-docker compose up
-```
-
-Espera hasta ver estos mensajes:
-```
-housing-mlflow  | Listening at: http://0.0.0.0:5000
-housing-api     | Application startup complete
-```
-
-Servicios disponibles:
-- API:    http://localhost:8000/docs
-- MLflow: http://localhost:5000
-
-### 3. Entrenar el modelo (primera vez)
-
-En otra terminal:
-
-```bash
-docker compose exec api python pipeline.py --version v1.0
-```
-
-### 4. Verificar en MLflow
-
-Abre http://localhost:5000 y verás el experimento `housing_price_prediction`
-con las métricas, gráficas y resultado del quality gate.
-
-### 5. Detener los servicios
-
-```bash
-# Detener sin borrar datos
-docker compose down
-
-# Detener y borrar todos los datos (reset completo)
-docker compose down -v
-```
-
----
-
-## Opción C — Solo la API con Docker
-
-Si solo quieres correr la API sin docker-compose:
+Si solo quieres correr la API con docker:
 
 ```bash
 docker build -t housing-v1 .
 docker run -p 8000:8000 housing-v1
 ```
-
-Para que el reentrenamiento se loggee en MLflow local:
-
+abre navegador
 ```bash
-docker run -p 8000:8000 \
-  -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 \
-  housing-v1
+http://localhost:8000/docs
 ```
 
 ---
