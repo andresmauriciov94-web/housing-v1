@@ -1,0 +1,11 @@
+.venv/
+.idea/
+__pycache__/
+*.pyc
+*.pkl
+mlflow.db
+mlruns/
+boston_housing.db
+pipeline.log
+*.db
+modelo_final.pkl

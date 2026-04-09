@@ -1,0 +1,15 @@
+# config.yaml — parámetros del proyecto
+# Cambia valores aquí sin tocar el código
+
+mlflow:
+  experiment_name: "housing_price_prediction"
+  tracking_uri: "sqlite:///mlflow.db"
+  model_name: "housing_linear_model"
+
+data:
+  precio_limite: 50.0
+  test_size: 0.2
+  random_state: 42
+
+modelo:
+  guardar_en: "modelo_final.pkl"
