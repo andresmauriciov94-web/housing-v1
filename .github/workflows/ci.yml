@@ -28,6 +28,7 @@ jobs:
           python -m py_compile api.py
           python -m py_compile src/data.py
           python -m py_compile src/train.py
+          python -m py_compile src/monitor.py
           echo "Sintaxis OK"
 
       - name: Verificar que el pipeline corre
@@ -39,3 +40,16 @@ jobs:
         run: |
           python -m py_compile api.py
           echo "API sintaxis OK"
+
+      - name: Construir imagen Docker
+        run: |
+          docker build -t housing-api .
+          echo "Docker build OK"
+
+      - name: Probar que el contenedor arranca
+        run: |
+          docker run -d --name housing-test -p 8000:8000 housing-api
+          sleep 5
+          curl -f http://localhost:8000/health
+          echo "Contenedor OK"
+          docker stop housing-test
