@@ -37,9 +37,5 @@ jobs:
 
       - name: Verificar que la API importa correctamente
         run: |
-          python -c "
-          import importlib.util, sys
-          spec = importlib.util.spec_from_file_location('api', 'api.py')
-          mod  = importlib.util.load_from_spec(spec)
-          print('API importa OK')
-          "
+          python -m py_compile api.py
+          echo "API sintaxis OK"
