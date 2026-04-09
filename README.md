@@ -97,7 +97,26 @@ python deploy.py
 
 Abre: http://127.0.0.1:8000/docs
 
+
 ---
+
+**MLflow Model Registry** — cada modelo entrenado queda registrado como
+versión numerada en el Registry bajo el nombre `housing_price_model`.
+Esto permite ver el historial completo de versiones, comparar métricas
+entre ellas y hacer rollback a cualquier versión anterior sin tocar código.
+
+**Trazabilidad completa por experimento** — cada run en MLflow registra
+cuatro elementos que garantizan reproducibilidad total:
+
+- `git_commit` — hash exacto del código que generó el modelo.
+  Con `git checkout hash` se recupera el código exacto de cualquier experimento pasado.
+- `dataset_source` — fuente de datos usada (boston_housing.db)
+- `n_train_samples` — número exacto de registros de entrenamiento
+- `random_state` — semilla fija que garantiza el mismo split siempre
+
+Combinados, estos cuatro elementos permiten reproducir cualquier predicción
+pasada de forma determinista, incluso años después. Esto responde directamente
+a los requerimientos de auditoría regulatoria.
 
 
 ## Opción B — Solo la API con Docker

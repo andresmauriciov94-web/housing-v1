@@ -21,7 +21,7 @@ qué modelo generó una predicción específica, ni con qué datos fue entrenado
 
 - Multas por incumplimiento regulatorio
 - Suspensión de operaciones hasta regularizar
-- Obligación de rever decisiones pasadas sin poder identificarlas
+- Decisiones pasadas sin poder identificarlas
 
 **Riesgo operacional**
 
@@ -47,7 +47,7 @@ Con 50 versiones de modelos sin registro:
 - El equipo no puede responder preguntas básicas: con qué datos entrenamos
   el modelo de marzo, por qué lo reemplazamos
 - La experimentación se vuelve caótica
-- Onboarding de nuevos ingenieros es casi imposible sin historial
+- Onboarding de nuevos ingenieros es dificil sin historial
 
 ---
 
@@ -151,8 +151,7 @@ Prediccion reproducida: 29.35 OK
 ### Por qué esta solución es adecuada
 
 **Escalabilidad** — MLflow maneja miles de experimentos sin degradación.
-El backend puede migrar de SQLite a PostgreSQL sin cambiar el código.
-Los artefactos pueden moverse a MinIO para almacenamiento distribuido.
+
 
 **Reproducibilidad** — La combinación git_commit + dataset + random_seed
 hace que cualquier experimento sea reproducible de forma determinista,
@@ -163,18 +162,9 @@ documentación manual que se vuelve obsoleta.
 que no escalan. El Model Registry con historial de versiones responde
 directamente las preguntas de una auditoría sin intervención humana.
 
-**Sin vendor lock-in** — Toda la solución es open-source y self-hosted.
+**Sin bloqueo** — Toda la solución es open-source y self-hosted.
 MLflow, SQLite, Git — sin dependencia de servicios de nube específicos.
 El sistema es portable a cualquier infraestructura.
 
 ---
 
-### Lo que NO es suficiente sin esta solución
-
-- Guardar solo el .pkl del modelo: sin el código y los datos la
-  reproducibilidad no es posible
-- Versionado solo en Git: no registra los datos ni los hiperparámetros
-  de cada experimento
-- Logs en texto libre: no permiten consultas eficientes para auditorías
-- Nombres de archivo con fecha: no hay trazabilidad entre el archivo
-  y las predicciones que hizo en producción
