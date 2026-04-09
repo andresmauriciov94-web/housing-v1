@@ -57,7 +57,12 @@ def _entrenar_candidato(nombre, estimador, X_train, X_test, y_train, y_test):
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2",   r2)
         mlflow.log_metric("mae",  mae)
-        mlflow.sklearn.log_model(modelo, "modelo")
+        #mlflow.sklearn.log_model(modelo, "modelo")
+        mlflow.sklearn.log_model(
+            sk_model=modelo,
+            artifact_path="modelo",
+            registered_model_name="housing_price_model",
+        )
 
         print(f"  {nombre:<20} RMSE: {rmse:.4f} | R2: {r2:.4f} | MAE: {mae:.4f}")
 
@@ -98,6 +103,8 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable, fig_medv=No
         mlflow.log_param("n_train_samples",    X_train.shape[0])
         mlflow.log_param("n_features_total",   X_train.shape[1])
         mlflow.log_param("features_sin_escalar", str(FEATURES_CATEGORICAS))
+        mlflow.log_param("dataset_source", "boston_housing.db")
+        mlflow.log_param("n_test_samples", X_test.shape[0])
 
         if hay_modelo:
             mlflow.log_metric("rmse_modelo_produccion", rmse_produccion)
