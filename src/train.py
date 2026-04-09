@@ -107,7 +107,7 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable, fig_medv=No
             mlflow.log_figure(fig_medv, "data_cleaning/distribucion_medv.png")
             import matplotlib.pyplot as plt
             plt.close(fig_medv)
-            print("  Gráfica MEDV guardada en MLflow → data_cleaning/distribucion_medv.png")
+            print("  Grafica MEDV guardada en MLflow: data_cleaning/distribucion_medv.png")
 
         run_id = run.info.run_id
 
