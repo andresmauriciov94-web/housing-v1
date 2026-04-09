@@ -1,5 +1,9 @@
 """
 src/data.py — Obtener y limpiar los datos.
+
+Al reentrenar combina:
+  - boston_housing.db   → dataset original
+  - training_data.csv   → datos de producción confirmados por el usuario
 """
 
 import os
@@ -9,7 +13,8 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 
 
-DB_PATH = "boston_housing.db"
+DB_PATH       = "boston_housing.db"
+TRAINING_DATA = "training_data.csv"
 
 
 def get_raw_data() -> pd.DataFrame:
@@ -34,17 +39,45 @@ def get_raw_data() -> pd.DataFrame:
         conn.close()
         print(f"  Dataset guardado en {DB_PATH}")
 
-    print(f"  Filas: {len(df)} | Columnas: {len(df.columns)}")
+    print(f"  Datos originales: {len(df)} registros")
     return df
+
+
+def combinar_con_produccion(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Si existen datos de producción confirmados los combina
+    con el dataset original.
+    """
+    if not os.path.exists(TRAINING_DATA):
+        return df
+
+    try:
+        df_produccion = pd.read_csv(TRAINING_DATA)
+
+        if len(df_produccion) == 0:
+            return df
+
+        # Asegurar que las columnas coincidan
+        df_produccion.columns = [c.upper() for c in df_produccion.columns]
+
+        df_combinado = pd.concat([df, df_produccion], ignore_index=True)
+        print(f"  Datos de producción agregados: {len(df_produccion)} registros")
+        print(f"  Total combinado: {len(df_combinado)} registros")
+        return df_combinado
+
+    except Exception as e:
+        print(f"  Advertencia: no se pudieron cargar datos de producción ({e})")
+        return df
 
 
 def clean_data(df, precio_limite, test_size, random_state):
     """
     Limpia y divide los datos.
-    - Elimina MEDV >= precio_limite (valor censurado)
-    - Separa features y target
-    - Divide en train / test
+    Combina automáticamente con datos de producción si existen.
     """
+    # Combinar con datos de producción confirmados
+    df = combinar_con_produccion(df)
+
     # Eliminar valores censurados
     df_clean = df[df["MEDV"] < precio_limite].copy()
     print(f"  Eliminados {len(df) - len(df_clean)} registros con MEDV >= {precio_limite}")
