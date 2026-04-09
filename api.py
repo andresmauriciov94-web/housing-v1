@@ -208,10 +208,8 @@ def retrain(background_tasks: BackgroundTasks):
 
 
 def ejecutar_reentrenamiento():
-    """Corre el pipeline de entrenamiento y recarga el modelo."""
     global modelo, modelo_listo
-
-    print("\nIniciando reentrenamiento con datos de producción...")
+    print("\nIniciando reentrenamiento con datos de produccion...")
     try:
         resultado = subprocess.run(
             [sys.executable, "pipeline.py", "--version", "retrain_produccion"],
@@ -220,12 +218,18 @@ def ejecutar_reentrenamiento():
             timeout=300,
         )
 
+        # Mostrar todo el output del pipeline en la consola de la API
+        if resultado.stdout:
+            print(resultado.stdout)
+        if resultado.stderr:
+            print(resultado.stderr)
+
         if resultado.returncode == 0:
             modelo       = joblib.load(cfg["modelo"]["guardar_en"])
             modelo_listo = True
             print("Reentrenamiento completado. Modelo recargado.")
         else:
-            print(f"Error en reentrenamiento:\n{resultado.stderr}")
+            print(f"Reentrenamiento fallo con exit code: {resultado.returncode}")
 
     except Exception as e:
         print(f"Error inesperado: {e}")
