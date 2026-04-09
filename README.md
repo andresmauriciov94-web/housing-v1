@@ -92,7 +92,7 @@ Abre: http://localhost:5000
 ### 6. Levantar la API
 
 ```bash
-python api.py
+python deploy.py
 ```
 
 Abre: http://127.0.0.1:8000/docs
@@ -118,11 +118,10 @@ http://localhost:8000/docs
 ## Endpoints
 
 | Método | Endpoint | Descripción |
-|--------|----------|-------------|
+|--|-|-|
 | GET | `/` | Bienvenida |
 | GET | `/health` | Estado de la API y el modelo |
 | POST | `/predict` | Predicción de precio |
-| GET | `/dashboard` | Dashboard visual de monitoreo |
 | GET | `/monitor` | Resumen JSON de predicciones |
 | GET | `/monitor/pendientes` | Predicciones sin precio real asignado |
 | POST | `/feedback` | Ingresar precios reales de predicciones pasadas |
@@ -226,9 +225,6 @@ responsable, métricas, gráficas y resultado del quality gate.
 El usuario confirma precios reales con `POST /feedback`.
 Esos datos se combinan con el dataset original en el reentrenamiento.
 
-**Docker Compose** — API y MLflow en contenedores separados con red
-interna compartida y volúmenes persistentes. MLflow sobrevive reinicios.
-
 ---
 
 ## Posibles mejoras
@@ -236,26 +232,19 @@ interna compartida y volúmenes persistentes. MLflow sobrevive reinicios.
 - GridSearchCV para Ridge con múltiples valores de alpha
 - Agregar RandomForest o XGBoost como candidatos
 - Alertas automáticas cuando el RMSE de producción supera un umbral
+- Agregar monitoreo de Drift a mis datos de entrenamiento 
 - Reentrenamiento automático programado
-- PostgreSQL como backend de MLflow para producción
 - Autenticación en `/retrain` y `/feedback`
-- Grafana conectado a un endpoint `/metrics` Prometheus
-
----
-
-## Bonus Track — Trazabilidad y reproducibilidad
-
-Ver [`docs/traceability.md`](docs/traceability.md) para el análisis de
-riesgos de auditoría y propuesta de solución de gobernanza de modelos.
+- Desplegar en nube monitorizacion automatica
+- acelerar consultas de tablas con feature storage
 
 ---
 
 ## Uso de herramientas AI
 
-Durante el desarrollo se utilizó Claude (Anthropic) como asistente para
-generación de boilerplate, revisión de arquitectura y documentación.
+Durante el desarrollo se utilizó Geminie como asistente, revisión de arquitectura y documentación.
 Todo el código fue revisado, entendido y validado manualmente.
-Las decisiones de diseño son propias del autor.
+Las decisiones de diseño son propias.
 
 ---
 
