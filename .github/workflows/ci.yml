@@ -1,0 +1,45 @@
+name: CI — Housing Price Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Verificar sintaxis del codigo
+        run: |
+          python -m py_compile pipeline.py
+          python -m py_compile api.py
+          python -m py_compile src/data.py
+          python -m py_compile src/train.py
+          echo "Sintaxis OK"
+
+      - name: Verificar que el pipeline corre
+        run: |
+          python pipeline.py --version ci_test
+          echo "Pipeline OK"
+
+      - name: Verificar que la API importa correctamente
+        run: |
+          python -c "
+          import importlib.util, sys
+          spec = importlib.util.spec_from_file_location('api', 'api.py')
+          mod  = importlib.util.load_from_spec(spec)
+          print('API importa OK')
+          "
