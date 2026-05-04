@@ -5,6 +5,7 @@ Pipeline completo de MLOps con entrenamiento, experimentación, API REST,
 monitoreo, feedback loop y reentrenamiento continuo.
 Stack 100% open-source · sin dependencia de ningún proveedor cloud.
 
+
 ---
 
 ## Estructura del proyecto
@@ -15,7 +16,6 @@ housing-v1/
 │   ├── data.py       → descarga, limpieza y gráfica de distribución MEDV
 │   ├── train.py      → entrenamiento, quality gate y registro en MLflow
 │   ├── monitor.py    → registro de predicciones y feedback de precios reales
-│   └── dashboard.py  → dashboard HTML de monitoreo en producción
 ├── pipeline.py       → orquestador del ciclo de entrenamiento
 ├── api.py            → API REST con FastAPI
 ├── deploy.py         → script de despliegue con validaciones previas

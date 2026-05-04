@@ -16,6 +16,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+
 FEATURES_CATEGORICAS = ["CHAS"]
 MODEL_PATH           = "modelo_final.pkl"
 
@@ -48,6 +51,13 @@ def _entrenar_candidato(nombre, estimador, X_train, X_test, y_train, y_test):
             ("regresion",     estimador),
         ])
         modelo.fit(X_train, y_train)
+        # ── Loggear mejores hiperparámetros si es GridSearchCV ────────────
+        if hasattr(estimador, "best_params_"):
+            for param, valor in estimador.best_params_.items():
+                mlflow.log_param(f"best_{param}", valor)
+            mlflow.log_param("best_score_cv", round(abs(estimador.best_score_), 4))
+            print(f"  Mejores params: {estimador.best_params_}")
+
         y_pred = modelo.predict(X_test)
 
         rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
@@ -76,8 +86,24 @@ def entrenar(X_train, X_test, y_train, y_test, version, responsable, fig_medv=No
     """
     candidatos = {
         "LinearRegression": LinearRegression(),
-        "Ridge_alpha1":     Ridge(alpha=1.0),
+        "Ridge_alpha1": Ridge(alpha=1.0),
+        "RandomForest_CV": GridSearchCV(
+            estimator=RandomForestRegressor(random_state=42),
+            param_grid={
+                "n_estimators": [50, 100, 200],
+                "max_depth": [None, 5, 10],
+                "min_samples_split": [2, 5],
+            },
+            cv=5,
+            scoring="neg_root_mean_squared_error",
+            n_jobs=-1,
+            refit=True,
+        ),
     }
+    # candidatos = {
+    #     "LinearRegression": LinearRegression(),
+    #     "Ridge_alpha1":     Ridge(alpha=1.0),
+    # }
 
     mejor_modelo = None
     mejor_rmse   = float("inf")
